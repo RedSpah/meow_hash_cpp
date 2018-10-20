@@ -23,6 +23,7 @@
     <ProjectGuid>{D8147003-66A6-468C-A72B-79C3C480CA10}</ProjectGuid>
     <RootNamespace>meowhashcpp</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <ProjectName>meow_hash_cpp</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
