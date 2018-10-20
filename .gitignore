@@ -40,9 +40,9 @@ TestResult.xml
 [Rr]eleasePS/
 dlldata.c
 
-# project files 
-main.cpp
-meow_hash.h
+# Test files
+*/meow_hash.h
+*/main.cpp
 
 # DNX
 project.lock.json
