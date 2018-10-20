@@ -40,6 +40,10 @@ TestResult.xml
 [Rr]eleasePS/
 dlldata.c
 
+# project files 
+main.cpp
+meow_hash.h
+
 # DNX
 project.lock.json
 project.fragment.lock.json
