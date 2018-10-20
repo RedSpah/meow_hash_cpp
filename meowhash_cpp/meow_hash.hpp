@@ -3,11 +3,113 @@
 #include <cstdint>
 #include <array>
 #include <cstring>
+#include <vector>
+#include <initializer_list>
+#include <string>
 
+/* ========================================================================
+Meow - A Fast Non-cryptographic Hash for Large Data Sizes
+(C) Copyright 2018 by Molly Rocket, Inc. (https://mollyrocket.com)
+
+See https://mollyrocket.com/meowhash for details.
+
+========================================================================
+
+LICENSE
+
+This software is provided 'as-is', without any express or implied
+warranty. In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+claim that you wrote the original software. If you use this software
+in a product, an acknowledgement in the product documentation would be
+appreciated but is not required.
+
+2. Altered source versions must be plainly marked as such, and must not be
+misrepresented as being the original software.
+
+3. This notice may not be removed or altered from any source distribution.
+
+========================================================================
+
+
+FAQ
+
+Q: What is it?
+A: Meow is a 512-bit non-cryptographic hash that operates at high speeds
+on x64 processors.  It is designed to be truncatable to 256, 128, 64,
+and 32-bit hash values and still retain good collision resistance.
+
+Q: What is it GOOD for?
+A: Quickly hashing large amounts of data for comparison purposes such as
+block deduplication or file verification.  As of its publication in
+October of 2018, it was the fastest hash in the smhasher suite by
+a factor of 3, but it still passes all smhasher tests and has not
+yet produced any spurious collisions in practical deployment as compared
+to a baseline of SHA-1.  It is also designed to get faster with age:
+it already contains 256-wide and 512-wide hash-equivalent versions
+that can be enabled for potentially 4x faster performance on future
+VAES x64 chips when they are available.
+
+Q: What is it BAD for?
+A: Anything security-related.  It is not designed for security and has
+not be analyzed for security.  It should be assumed that it offers
+no security whatsoever.  It is also not designed for small input
+sizes, so although it _can_ hash 1 byte, 4 bytes, 32 bytes, etc.,
+it will end up wasting a lot of time on padding since its minimum
+block size is 256 bytes.  Generally speaking, if you're not usually
+hashing a kilobyte or more, this is probably not the hash you're
+looking for.
+
+Q: Who wrote it and why?
+A: It was written by Casey Muratori (https://caseymuratori.com) for use
+in processing large-footprint assets for the game 1935
+(https://molly1935.com).  The original system used an SHA-1 hash (which
+is not designed for speed), and so to eliminate hashing bottlenecks
+in the pipeline, the Meow hash was designed to produce equivalent
+quality 256-bit hash values as a drop-in replacement that would take
+a fraction of the CPU time.
+This rewrite was written by Piotr Pliszka. (https://github.com/RedSpah)
+
+Q: Why is it called the "Meow hash"?
+A: It was created while Meow the Infinite (https://meowtheinfinite.com)
+was in development at Molly Rocket, so there were lots of Meow the
+Infinite drawings happening at that time.
+
+Q: How does it work?
+A: It was designed to be the fastest possible hash that produces
+collision-free hash values in practice and passes standard hash
+quality checks.  It uses the built-in AES acceleration provided by
+modern CPUs and computes sixteen hash streams in parallel to avoid
+serial dependency stalls.  The sixteen separate hash results are
+then hashed themselves to produce the final hash value.  While only
+four hash streams would suffice for maximum performance on today's
+machines, hypothetical future chips will likely want sixteen.
+Meow was designed to be future-proof by using sixteen streams up
+front, so in the 2020 time frame when such chips start appearing,
+wider execution of Meow can be enabled without needing to change
+any persistent hash values stored in codebases, databases, etc.
+
+======================================================================== */
+
+// A force inline macro to match the original's behaviour of having AESMerge and AESLoad as macros.
+#ifdef _MSC_VER    /* Visual Studio */
+	#define MEOWH_FORCE_STATIC_INLINE static __forceinline
+#else 
+	#ifdef __GNUC__ /* gcc, clang */
+		#define MEOWH_FORCE_STATIC_INLINE static inline __attribute__((always_inline))
+	#else
+		#define MEOWH_FORCE_STATIC_INLINE static inline
+	#endif
+#endif
 
 namespace meowh
 {
-
 	namespace types
 	{
 		using _hash_32_underlying = uint32_t;
@@ -32,7 +134,13 @@ namespace meowh
 
 	template <size_t N>
 	using hash_type_t = typename types::hash_type<N>::type;
+	using hash_type32_t = typename hash_type_t<32>;
+	using hash_type64_t = typename hash_type_t<64>;
+	using hash_type128_t = typename hash_type_t<128>;
+	using hash_type256_t = typename hash_type_t<256>;
+	using hash_type512_t = typename hash_type_t<512>;
 	
+
 	template <size_t N>
 	struct alignas(64) hash_t
 	{
@@ -41,8 +149,6 @@ namespace meowh
 		static_assert(N == 32 || N == 64 || N == 128 || N == 256 || N == 512, "meowh::hash_t can only be declared with 32, 64, 128, 256 and 512 element bit width.");
 	 
 		std::array<hash_type_t<N>, 512 / N> elem;
-
-	
 
 		template <size_t A>
 		hash_t(const hash_t<A>& other)
@@ -103,28 +209,31 @@ namespace meowh
 		
 	};
 
-	namespace helper
+	using hash32_t = hash_t<32>;
+	using hash64_t = hash_t<64>;
+	using hash128_t = hash_t<128>;
+	using hash256_t = hash_t<256>;
+	using hash512_t = hash_t<512>;
+
+	namespace detail
 	{
 		template <size_t N>
-		inline static hash_type_t<N> unaligned_read(const void* src)
+		MEOWH_FORCE_STATIC_INLINE hash_type_t<N> unaligned_read(const void* src)
 		{
 			hash_type_t<N> val;
 			std::memcpy(reinterpret_cast<void*>(&val), src, sizeof(val));
 			return val;
 		}
-	}
 
-	namespace impl
-	{
 		template <size_t N>
-		inline static void aes_merge(hash_t<N>& a, const hash_t<N>& b)
+		MEOWH_FORCE_STATIC_INLINE void aes_merge(hash_t<N>& a, const hash_t<N>& b)
 		{
 			if constexpr (N == 128)
 			{
-				a[0] = _mm_aesdec_si128(a[0] , b[0]);
-				a[1] = _mm_aesdec_si128(a[1] , b[1]);
-				a[2] = _mm_aesdec_si128(a[2] , b[2]);
-				a[3] = _mm_aesdec_si128(a[3] , b[3]);
+				a[0] = _mm_aesdec_si128(a[0], b[0]);
+				a[1] = _mm_aesdec_si128(a[1], b[1]);
+				a[2] = _mm_aesdec_si128(a[2], b[2]);
+				a[3] = _mm_aesdec_si128(a[3], b[3]);
 			}
 			else if constexpr (N == 256)
 			{
@@ -138,7 +247,7 @@ namespace meowh
 		}
 
 		template <size_t N>
-		inline static void aes_rotate(hash_t<N>& a, hash_t<N>& b)
+		MEOWH_FORCE_STATIC_INLINE void aes_rotate(hash_t<N>& a, hash_t<N>& b)
 		{
 			aes_merge<N>(a, b);
 
@@ -154,28 +263,28 @@ namespace meowh
 		}
 
 		template <size_t N>
-		inline static void aes_load(hash_t<N>& a, const uint8_t* src)
+		MEOWH_FORCE_STATIC_INLINE void aes_load(hash_t<N>& a, const uint8_t* src)
 		{
 			if constexpr (N == 128)
 			{
-				a[0] = _mm_aesdec_si128(a[0], helper::unaligned_read<128>(src));
-				a[1] = _mm_aesdec_si128(a[1], helper::unaligned_read<128>(src + 16));
-				a[2] = _mm_aesdec_si128(a[2], helper::unaligned_read<128>(src + 32));
-				a[3] = _mm_aesdec_si128(a[3], helper::unaligned_read<128>(src + 48));
+				a[0] = _mm_aesdec_si128(a[0], unaligned_read<128>(src));
+				a[1] = _mm_aesdec_si128(a[1], unaligned_read<128>(src + 16));
+				a[2] = _mm_aesdec_si128(a[2], unaligned_read<128>(src + 32));
+				a[3] = _mm_aesdec_si128(a[3], unaligned_read<128>(src + 48));
 			}
 			else if constexpr (N == 256)
 			{
-				a[0] = _mm256_aesdec_epi128(a[0], helper::unaligned_read<256>(src));
-				a[1] = _mm256_aesdec_epi128(a[1], helper::unaligned_read<256>(src + 32));
+				a[0] = _mm256_aesdec_epi128(a[0], unaligned_read<256>(src));
+				a[1] = _mm256_aesdec_epi128(a[1], unaligned_read<256>(src + 32));
 			}
 			else if constexpr (N == 512)
 			{
-				a[0] = _mm512_aesdec_epi128(a[0], helper::unaligned_read<512>(src));
+				a[0] = _mm512_aesdec_epi128(a[0], unaligned_read<512>(src));
 			}
 		}
 
 		template <size_t N, size_t R = N>
-		inline static hash_t<R> meow_hash_impl(const uint8_t* src, uint64_t len, uint64_t seed)
+		MEOWH_FORCE_STATIC_INLINE hash_t<R> meow_hash_impl(const uint8_t* src, uint64_t len, uint64_t seed)
 		{
 			hash_t<64> init_vector;
 
@@ -243,12 +352,56 @@ namespace meowh
 	}
 
 	template <size_t N, size_t R = N>
-	hash_t<R> meow_hash(const void* src, uint64_t len, uint64_t seed)
+	hash_t<R> meow_hash(const void* input, size_t len, uint64_t seed = 0)
 	{
 		static_assert(N == 128 || N == 256 || N == 512, "meow_hash can only be called in 128, 256, or 512 bit mode.");
-		return impl::meow_hash_impl<N, R>(reinterpret_cast<const uint8_t*>(src), len, seed);
+		return detail::meow_hash_impl<N, R>(reinterpret_cast<const uint8_t*>(input), len, seed);
 	}
 
+	template <size_t N, size_t R = N, typename T>
+	hash_t<R> meow_hash(const T* input, size_t len, uint64_t seed = 0)
+	{
+		static_assert(N == 128 || N == 256 || N == 512, "meow_hash can only be called in 128, 256, or 512 bit mode.");
+		return detail::meow_hash_impl<N, R>(reinterpret_cast<const uint8_t*>(input), len * sizeof(T), seed);
+	}
+
+	template <size_t N, size_t R = N, typename T, size_t AN>
+	hash_t<R> meow_hash(const std::array<T, AN>& input, uint64_t seed = 0)
+	{
+		static_assert(N == 128 || N == 256 || N == 512, "meow_hash can only be called in 128, 256, or 512 bit mode.");
+		return detail::meow_hash_impl<N, R>(reinterpret_cast<const uint8_t*>(input.data()), input.size() * sizeof(T), seed);
+	}
+
+	template <size_t N, size_t R = N, typename T>
+	hash_t<R> meow_hash(const std::basic_string<T>& input, uint64_t seed = 0)
+	{
+		static_assert(N == 128 || N == 256 || N == 512, "meow_hash can only be called in 128, 256, or 512 bit mode.");
+		return detail::meow_hash_impl<N, R>(reinterpret_cast<const uint8_t*>(input.data()), input.length() * sizeof(T), seed);
+	}
+
+	template <size_t N, size_t R = N, typename T>
+	hash_t<R> meow_hash(const std::vector<T>& input, uint64_t seed = 0)
+	{
+		static_assert(N == 128 || N == 256 || N == 512, "meow_hash can only be called in 128, 256, or 512 bit mode.");
+		return detail::meow_hash_impl<N, R>(reinterpret_cast<const uint8_t*>(input.data()), input.size() * sizeof(T), seed);
+	}
+
+	template <size_t N, size_t R = N, typename T>
+	hash_t<R> meow_hash(const std::initializer_list<T>& input, uint64_t seed = 0)
+	{
+		static_assert(N == 128 || N == 256 || N == 512, "meow_hash can only be called in 128, 256, or 512 bit mode.");
+		return detail::meow_hash_impl<N, R>(reinterpret_cast<const uint8_t*>(input.begin()), input.size() * sizeof(T), seed);
+	}
+
+	template <size_t N, size_t R = N, typename ContiguousIterator>
+	hash_t<R> meow_hash(ContiguousIterator begin, ContiguousIterator end, uint64_t seed = 0)
+	{
+		static_assert(N == 128 || N == 256 || N == 512, "meow_hash can only be called in 128, 256, or 512 bit mode.");
+		using T = typename std::decay_t<decltype(*end)>;
+		return detail::meow_hash_impl<N, R>(reinterpret_cast<const uint8_t*>(&*begin), (end - begin) * sizeof(T), seed);
+	}
+
+
 	constexpr int32_t meow_hash_version = 1;
-	constexpr const char* meow_hash_version_name = "0.1 Alpha - cpp edition";
+	constexpr const char* meow_hash_version_name = "0.1 Alpha - clean cpp edition";
 }
