@@ -72,9 +72,9 @@ int main(int argc, char** argv)
 	{
 		std::cout << "\n=== UNALIGNED: ===\n\n";;
 
-		constexpr int32_t base_num = (1 << 12) ;
+		constexpr int32_t base_num = (1 << 12);
 		constexpr int32_t base_buf_size = (1 << 16);
-		constexpr int32_t adv_steps = 0;
+		constexpr int32_t adv_steps = 8;
 
 		int32_t test_buf_size = base_buf_size;
 		int32_t test_num = base_num;
@@ -174,7 +174,7 @@ int main(int argc, char** argv)
 
 		constexpr int32_t align_base_num = (1 << 12);
 		constexpr int32_t align_base_buf_size = (1 << 16);
-		constexpr int32_t align_adv_steps = 0;
+		constexpr int32_t align_adv_steps = 8;
 
 		int32_t align_test_buf_size = align_base_buf_size;
 		int32_t align_test_num = align_base_num; 
