@@ -22,23 +22,9 @@ matrix:
     - compiler: clang
       addons:
         apt:
-          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-6']
-          packages: ['clang-6']
-      env: COMPILER=clang++-6 CPPVERFLAG=-std=c++17 EXTRAARGS=" -O3 -march=native -Wall -Wpedantic -Wextra " LIBS=""
-
-    - compiler: clang
-      addons:
-        apt:
           sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-7']
           packages: ['clang-7']
       env: COMPILER=clang++-7 CPPVERFLAG=-std=c++17 EXTRAARGS=" -O3 -march=native -Wall -Wpedantic -Wextra " LIBS=""
-
-    - compiler: clang
-      addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-8']
-          packages: ['clang-8']
-      env: COMPILER=clang++-8 CPPVERFLAG=-std=c++17 EXTRAARGS=" -O3 -march=native -Wall -Wpedantic -Wextra " LIBS=""
 
 script:
 - cd ./meowhash_cpp

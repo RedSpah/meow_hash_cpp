@@ -180,7 +180,6 @@ int main(int argc, char** argv)
 		int32_t align_test_num = align_base_num; 
 
 		uint32_t* input_buffer = reinterpret_cast<uint32_t*>(ALIGN_MALLOC((align_base_buf_size << align_adv_steps) * sizeof(uint32_t), 64));
-		uint32_t* input_buffer_end = input_buffer + (align_base_buf_size << align_adv_steps);
 
 		for (int adv_step = 0; adv_step < align_adv_steps; adv_step++)
 		{
