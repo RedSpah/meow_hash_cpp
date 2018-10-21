@@ -112,24 +112,24 @@ namespace meowh
 {
 	namespace types
 	{
-		using _hash_32_underlying = uint32_t;
-		using _hash_64_underlying = uint64_t;
-		using _hash_128_underlying = __m128i;
-		using _hash_256_underlying = __m256i;
-		using _hash_512_underlying = __m512i;
+		using hash_32_underlying = uint32_t;
+		using hash_64_underlying = uint64_t;
+		using hash_128_underlying = __m128i;
+		using hash_256_underlying = __m256i;
+		using hash_512_underlying = __m512i;
 
 		template <size_t N>
 		struct hash_type { using type = void; };
 		template <>
-		struct hash_type<32> { using type = _hash_32_underlying; };
+		struct hash_type<32> { using type = hash_32_underlying; };
 		template <>
-		struct hash_type<64> { using type = _hash_64_underlying; };
+		struct hash_type<64> { using type = hash_64_underlying; };
 		template <>
-		struct hash_type<128> { using type = _hash_128_underlying; };
+		struct hash_type<128> { using type = hash_128_underlying; };
 		template <>
-		struct hash_type<256> { using type = _hash_256_underlying; };
+		struct hash_type<256> { using type = hash_256_underlying; };
 		template <>
-		struct hash_type<512> { using type = _hash_512_underlying; };		
+		struct hash_type<512> { using type = hash_512_underlying; };		
 	}
 
 	template <size_t N>
@@ -150,31 +150,25 @@ namespace meowh
 	 
 		std::array<hash_type_t<N>, 512 / N> elem;
 
-		template <size_t A>
-		hash_t(const hash_t<A>& other)
-		{
-			std::memcpy(reinterpret_cast<uint8_t*>(elem.data()), reinterpret_cast<const uint8_t*>(other.elem.data()), 64);
-		}
-
-		template <size_t A>
-		hash_t(hash_t<A> other)
-		{
-			std::memcpy(reinterpret_cast<void*>(elem.data()), reinterpret_cast<const void*>(other.elem.data()), 64);
-		}
-
 		hash_t() {};
 
 		template <size_t A>
 		hash_t<N>& operator= (const hash_t<A>& other)
 		{
-			std::memcpy(reinterpret_cast<void*>(elem.data()), reinterpret_cast<const void*>(other.elem.data()), 64);
+			if (this != &other)
+			{
+				std::memcpy(reinterpret_cast<void*>(elem.data()), reinterpret_cast<const void*>(other.elem.data()), 64);
+			}
 			return *this;
 		}
 
 		template <size_t A>
 		hash_t<N>& operator= (hash_t<A> other)
 		{
-			std::memcpy(reinterpret_cast<void*>(elem.data()), reinterpret_cast<const void*>(other.elem.data()), 64);
+			if (this != &other)
+			{
+				std::memcpy(reinterpret_cast<void*>(elem.data()), reinterpret_cast<const void*>(other.elem.data()), 64);
+			}
 			return *this;
 		}
 
@@ -397,11 +391,11 @@ namespace meowh
 	hash_t<R> meow_hash(ContiguousIterator begin, ContiguousIterator end, uint64_t seed = 0)
 	{
 		static_assert(N == 128 || N == 256 || N == 512, "meow_hash can only be called in 128, 256, or 512 bit mode.");
-		using T = typename std::decay_t<decltype(*end)>;
+		using T = std::decay_t<decltype(*end)>;
 		return detail::meow_hash_impl<N, R>(reinterpret_cast<const uint8_t*>(&*begin), (end - begin) * sizeof(T), seed);
 	}
 
 
 	constexpr int32_t meow_hash_version = 1;
-	constexpr const char* meow_hash_version_name = "0.1 Alpha - clean cpp edition";
+	constexpr const char meow_hash_version_name[] = "0.1 Alpha - clean cpp edition";
 }
