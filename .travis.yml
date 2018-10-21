@@ -41,6 +41,6 @@ matrix:
       env: COMPILER=clang++-8 CPPVERFLAG=-std=c++17 EXTRAARGS="-O3 -march=native -Wall -Wpedantic -Wextra" LIBS=""
 
 script:
-- cd ./meowhash
+- cd ./meowhash_cpp
 - make CXX=$COMPILER 
 - ./test

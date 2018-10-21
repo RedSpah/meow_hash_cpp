@@ -179,7 +179,7 @@ int main(int argc, char** argv)
 		constexpr int32_t align_adv_steps = 8;
 
 		int32_t align_test_buf_size = align_base_buf_size;
-		int32_t align_test_num = align_base_num; 
+		int32_t align_test_num = align_base_num;  
 
 		uint32_t* input_buffer = reinterpret_cast<uint32_t*>(ALIGN_MALLOC((align_base_buf_size << align_adv_steps) * sizeof(uint32_t), 64));
 		uint32_t* input_buffer_end = input_buffer + (align_base_buf_size << align_adv_steps);
