@@ -344,7 +344,7 @@ namespace meowh
 
 		}
 
-		template <size_t N, bool Align, typename ptr_arg_t = typename std::conditional<Align == true, typename const hash_type_t<N>*, const uint8_t*>::type>
+		template <size_t N, bool Align, typename ptr_arg_t = typename std::conditional<Align == true, const hash_type_t<N>*, const uint8_t*>::type>
 		MEOWH_FORCE_STATIC_INLINE void aes_load(hash_t<N>& a, ptr_arg_t src)
 		{
 			if constexpr (Align)
