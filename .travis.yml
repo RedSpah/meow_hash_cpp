@@ -19,7 +19,7 @@ matrix:
           packages: ['g++-8']
       env: COMPILER=g++-8 CPPVERFLAG=-std=c++17 EXTRAARGS="-O3 -march=native -Wall -Wpedantic -Wextra" LIBS=""
 
-	- compiler: clang
+    - compiler: clang
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-6']
