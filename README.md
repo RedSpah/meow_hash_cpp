@@ -1,4 +1,7 @@
 # meow_hash_cpp
+
+[![Build Status](https://travis-ci.org/RedSpah/meow_hash_cpp.svg?branch=master)](https://travis-ci.org/RedSpah/meow_hash_cpp)
+
 This is a rewrite of the Casey's Muratori Meow hash (https://github.com/cmuratori/meow_hash), utilizing modern C++ features to significantly tidy up the codebase and get rid of a large amount of undefined behaviour present in the original implementation.
 
 Compatibility
@@ -38,7 +41,7 @@ Usage Instructions
 
 The template arguments of the `meowh::meow_hash` function specify the following:
 * The first argument, N, specifies the version of the hashing algorithm to use. `128` uses MeowHash1, `256` uses MeowHash2, and `512` uses MeowHash4. Nothing else will need to be changed to switch between the different versions when MeowHash2 and MeowHash4 become publically usible.
-* The second argument, Align, specifies whether the input buffer fed to the function is asssumed to be aligned to 64 bytes. If so, an optimization will be enabled in the algorithm. Note that setting Align to `true` without the input buffer not being actually aligned is undefined behaviour (unaligned read).
+* The second argument, Align, specifies whether the input buffer fed to the function is asssumed to be aligned to 16, 32, or 64 bytes, depending on whether MeowHash1, 2, or 4 is being used. If so, an optimization will be enabled in the algorithm. Note that setting Align to `true` without the input buffer not being actually aligned is undefined behaviour (unaligned read).
 * The second argument, R, specifies the element type the returned 512 bit hash will use. It is set to the same value as N by default.
 
 Due to undefined behavior problems involving switching between unions, the original hash return type, `meow_lane`, has been replaced by `meowh::hash_t`. `hash_t` has a single template argument, which determines the size in bits of the elements of the internal 512 bit long array to hold the hash result. `32`, `64`, `128`, `256` and `512` are valid values. `128`, `256` and `512` are only allowed if the target machine supports SSE, AVX, and AVX512F, respectively. Alternatively, if the user wants to manually enable them without relying on feature test macros, macros `_MEOWH_128`, `_MEOWH_256` and `_MEOWH_512` should be defined before including `meow_hash.cpp`. These elements can be accessed by indexing the `hash_t` object with the array subscript operator (`[]`). Values of other types than the element type can be obtained with the use of the `.as` member function. It takes a single template argument, specifying the size in bits of the desired type, and a single function argument, specifying the desired array member of the internal 512 bit long array expressed as an array of the desired type.
