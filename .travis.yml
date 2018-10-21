@@ -23,7 +23,7 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-7']
-          packages: ['clang-7', 'libstdc++6']
+          packages: ['clang-7', 'libc++']
       env: COMPILER=clang++-7 CPPVERFLAG=-std=c++17 EXTRAARGS=" -O3 -march=native -Wall -Wpedantic -Wextra -stdlib=libc++" LIBS=""
 
 script:
