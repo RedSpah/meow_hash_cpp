@@ -72,7 +72,7 @@ int main(int argc, char** argv)
 	{
 		std::cout << "\n=== UNALIGNED: ===\n\n";;
 
-		constexpr int32_t base_num = (1 << 12);
+		constexpr int32_t base_num = (1 << 12) ;
 		constexpr int32_t base_buf_size = (1 << 16);
 		constexpr int32_t adv_steps = 0;
 
