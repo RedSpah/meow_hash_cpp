@@ -106,55 +106,111 @@ any persistent hash values stored in codebases, databases, etc.
 
 // A force inline macro to match the original's behaviour of having AESMerge and AESLoad as macros.
 #ifdef _MSC_VER    /* Visual Studio */
-	#define MEOWH_FORCE_STATIC_INLINE static __forceinline
+#define MEOWH_FORCE_STATIC_INLINE static 
 #else 
-	#ifdef __GNUC__ /* gcc, clang */
-		#define MEOWH_FORCE_STATIC_INLINE static inline __attribute__((always_inline))
-	#else
-		#define MEOWH_FORCE_STATIC_INLINE static inline
-	#endif
+#ifdef __GNUC__ /* gcc, clang */
+#define MEOWH_FORCE_STATIC_INLINE static inline __attribute__((always_inline))
+#else
+#define MEOWH_FORCE_STATIC_INLINE static inline
 #endif
+#endif
+
+
+
+// Feature test macros, Visual Studio
+#ifdef _MSC_VER
+
+
+#if (_M_IX86_FP >= 1) || (defined(_M_AMD64) || defined(_M_X64))
+#define _MEOWH_128 
+#endif
+
+// broken?
+#if defined(__AVX__) || defined(__AVX2__)
+#define _MEOWH_256 
+#endif
+
+/* because there isn't a macro I can check to test for AVX512F support,
+ * Visual Studio won't be able to support it for now
+ * unless _MEOWH_512 is defined before including the header. */
+
+#else
+#endif
+
+#ifdef __GNUC__
+
+#ifdef __SSE__
+#define _MEOWH_128
+#endif
+
+#ifdef __AVX__
+#define _MEOWH_256
+#endif
+
+#ifdef __AVX512F__
+#define _MEOWH_512
+#endif
+
+#endif // __GNUC__
+
+
+
 
 namespace meowh
 {
 	namespace types
 	{
-		using hash_32_underlying = uint32_t;
-		using hash_64_underlying = uint64_t;
-		using hash_128_underlying = __m128i;
-		using hash_256_underlying = __m256i;
-		using hash_512_underlying = __m512i;
-
 		template <size_t N>
 		struct hash_type { using type = void; };
+
+
+		// common
+		using hash_32_underlying = uint32_t;
 		template <>
 		struct hash_type<32> { using type = hash_32_underlying; };
+
+		using hash_64_underlying = uint64_t;
 		template <>
 		struct hash_type<64> { using type = hash_64_underlying; };
+
+		// xmm
+#ifdef _MEOWH_128
+		using hash_128_underlying = __m128i;
 		template <>
 		struct hash_type<128> { using type = hash_128_underlying; };
+#endif
+
+		// ymm
+#ifdef _MEOWH_256
+		using hash_256_underlying = __m256i;
 		template <>
 		struct hash_type<256> { using type = hash_256_underlying; };
+#endif
+
+		// zmm
+#ifdef _MEOWH_512
+		using hash_512_underlying = __m512i;
 		template <>
-		struct hash_type<512> { using type = hash_512_underlying; };		
+		struct hash_type<512> { using type = hash_512_underlying; };
+#endif
 	}
 
 	template <size_t N>
 	using hash_type_t = typename types::hash_type<N>::type;
-	using hash_type32_t = hash_type_t<32>;
-	using hash_type64_t = hash_type_t<64>;
-	using hash_type128_t = hash_type_t<128>;
-	using hash_type256_t = hash_type_t<256>;
-	using hash_type512_t = hash_type_t<512>;
-	
+
 
 	template <size_t N>
 	struct alignas(64) hash_t
 	{
 	public:
 
-		static_assert(N == 32 || N == 64 || N == 128 || N == 256 || N == 512, "meowh::hash_t can only be declared with 32, 64, 128, 256 and 512 element bit width.");
-	 
+		static_assert(N == 32 || N == 64 ||
+			(N == 128 && !std::is_same_v<hash_type_t<128>, void>) ||
+			(N == 256 && !std::is_same_v<hash_type_t<256>, void>) ||
+			(N == 512 && !std::is_same_v<hash_type_t<512>, void>),
+			"meowh::hash_t can only be declared with 32, 64, 128, 256 and 512 element bit width,"
+			"and for the latter three, only if your CPU supports SSE, AVX, and AVX512F respectively.");
+
 		std::array<hash_type_t<N>, 512 / N> elem;
 
 		hash_t() {};
@@ -200,14 +256,24 @@ namespace meowh
 		template <size_t A>
 		hash_type_t<A> as(size_t index) const
 		{
-			static_assert(A == 32 || A == 64 || A == 128 || A == 256 || A == 512, "meowh::hash_t can only be declared with 32, 64, 128, 256 and 512 element bit width.");
+			static_assert(N == 32 || N == 64 ||
+				(N == 128 && !std::is_same_v<hash_type_t<128>, void>) ||
+				(N == 256 && !std::is_same_v<hash_type_t<256>, void>) ||
+				(N == 512 && !std::is_same_v<hash_type_t<512>, void>),
+				"meowh::hash_t can only be declared with 32, 64, 128, 256 and 512 element bit width,"
+				"and for the latter three, only if your CPU supports SSE, AVX, and AVX512F respectively.");
 
 			hash_type_t<A> transmuted;
 			std::memcpy(reinterpret_cast<void*>(&transmuted), reinterpret_cast<const uint8_t*>(elem.data()) + ((A / 8) * index), A / 8);
 			return transmuted;
 		}
 
-		
+		bool operator!=(const hash_t<N>& other)
+		{
+			return !!(memcmp(elem.data(), other.elem.data(), 64));
+		}
+
+
 	};
 
 	using hash32_t = hash_t<32>;
@@ -219,7 +285,7 @@ namespace meowh
 	namespace detail
 	{
 		template <size_t N>
-		MEOWH_FORCE_STATIC_INLINE hash_type_t<N> unaligned_read(const void* src)
+		static __forceinline hash_type_t<N> unaligned_read(const void* src)
 		{
 			hash_type_t<N> val;
 			std::memcpy(reinterpret_cast<void*>(&val), src, sizeof(val));
@@ -227,7 +293,7 @@ namespace meowh
 		}
 
 		template <size_t N>
-		MEOWH_FORCE_STATIC_INLINE void aes_merge(hash_t<N>& a, const hash_t<N>& b)
+		static __forceinline void aes_merge(hash_t<N>& a, const hash_t<N>& b)
 		{
 			if constexpr (N == 128)
 			{
@@ -248,44 +314,80 @@ namespace meowh
 		}
 
 		template <size_t N>
-		MEOWH_FORCE_STATIC_INLINE void aes_rotate(hash_t<N>& a, hash_t<N>& b)
+		static __forceinline void aes_rotate(hash_t<N>& a, hash_t<N>& b)
 		{
 			aes_merge<N>(a, b);
 
-			hash_t<128> rot_b = b;
-
-			hash_type_t<128> tmp = rot_b[0];
-			rot_b[0] = rot_b[1];
-			rot_b[1] = rot_b[2];
-			rot_b[2] = rot_b[3];
-			rot_b[3] = tmp;
-
-			b = rot_b;
-		}
-
-		template <size_t N>
-		MEOWH_FORCE_STATIC_INLINE void aes_load(hash_t<N>& a, const uint8_t* src)
-		{
 			if constexpr (N == 128)
 			{
-				a[0] = _mm_aesdec_si128(a[0], unaligned_read<128>(src));
-				a[1] = _mm_aesdec_si128(a[1], unaligned_read<128>(src + 16));
-				a[2] = _mm_aesdec_si128(a[2], unaligned_read<128>(src + 32));
-				a[3] = _mm_aesdec_si128(a[3], unaligned_read<128>(src + 48));
+				hash_type_t<128> tmp = b[0];
+				b[0] = b[1];
+				b[1] = b[2];
+				b[2] = b[3];
+				b[3] = tmp;
 			}
-			else if constexpr (N == 256)
+			else
 			{
-				a[0] = _mm256_aesdec_epi128(a[0], unaligned_read<256>(src));
-				a[1] = _mm256_aesdec_epi128(a[1], unaligned_read<256>(src + 32));
+				hash_t<128> rot_b = b;
+
+				hash_type_t<128> tmp = rot_b[0];
+				rot_b[0] = rot_b[1];
+				rot_b[1] = rot_b[2];
+				rot_b[2] = rot_b[3];
+				rot_b[3] = tmp;
+
+				b = rot_b;
+
+
 			}
-			else if constexpr (N == 512)
+
+		}
+
+		template <size_t N, bool Align, typename ptr_arg_t = std::conditional_t<Align == true, typename const hash_type_t<N>*, const uint8_t*>>
+		static __forceinline void aes_load(hash_t<N>& a, ptr_arg_t src)
+		{
+			if constexpr (Align)
 			{
-				a[0] = _mm512_aesdec_epi128(a[0], unaligned_read<512>(src));
+				if constexpr (N == 128)
+				{
+					a[0] = _mm_aesdec_si128(a[0], *(src));
+					a[1] = _mm_aesdec_si128(a[1], *(src + 1));
+					a[2] = _mm_aesdec_si128(a[2], *(src + 2));
+					a[3] = _mm_aesdec_si128(a[3], *(src + 3));
+				}
+				else if constexpr (N == 256)
+				{
+					a[0] = _mm256_aesdec_epi128(a[0], *(src));
+					a[1] = _mm256_aesdec_epi128(a[1], *(src + 1));
+				}
+				else if constexpr (N == 512)
+				{
+					a[0] = _mm512_aesdec_epi128(a[0], *(src));
+				}
+			}
+			else
+			{
+				if constexpr (N == 128)
+				{
+					a[0] = _mm_aesdec_si128(a[0], unaligned_read<128>(src));
+					a[1] = _mm_aesdec_si128(a[1], unaligned_read<128>(src + 16));
+					a[2] = _mm_aesdec_si128(a[2], unaligned_read<128>(src + 32));
+					a[3] = _mm_aesdec_si128(a[3], unaligned_read<128>(src + 48));
+				}
+				else if constexpr (N == 256)
+				{
+					a[0] = _mm256_aesdec_epi128(a[0], unaligned_read<256>(src));
+					a[1] = _mm256_aesdec_epi128(a[1], unaligned_read<256>(src + 32));
+				}
+				else if constexpr (N == 512)
+				{
+					a[0] = _mm512_aesdec_epi128(a[0], unaligned_read<512>(src));
+				}
 			}
 		}
 
-		template <size_t N, size_t R = N>
-		MEOWH_FORCE_STATIC_INLINE hash_t<R> meow_hash_impl(const uint8_t* src, uint64_t len, uint64_t seed)
+		template <size_t N, bool Align = false, size_t R = N>
+		static hash_t<R> meow_hash_impl(const uint8_t* src, uint64_t len, uint64_t seed)
 		{
 			hash_t<64> init_vector;
 
@@ -300,25 +402,57 @@ namespace meowh
 			uint64_t block_count = len / 256;
 			len -= block_count * 256;
 
-			while (block_count-- > 0)
+			if constexpr (Align == true)
 			{
-				aes_load<N>(stream_0123, src);
-				aes_load<N>(stream_4567, src + 64);
-				aes_load<N>(stream_89AB, src + 128);
-				aes_load<N>(stream_CDEF, src + 192);
-				src += 256;
+				const hash_type_t<N>* aligned_src = reinterpret_cast<const hash_type_t<N>*>(src);
+
+				constexpr int32_t size_div = sizeof(hash_type_t<N>);
+
+				while (block_count-- > 0)
+				{
+					aes_load<N, true>(stream_0123, aligned_src);
+					aes_load<N, true>(stream_4567, aligned_src + (64 / size_div));
+					aes_load<N, true>(stream_89AB, aligned_src + (128 / size_div));
+					aes_load<N, true>(stream_CDEF, aligned_src + (192 / size_div));
+
+					aligned_src += (256 / size_div);
+				}
+
+				if (len > 0)
+				{
+					std::array<hash_t<N>, 4> partial = { init_vector, init_vector, init_vector, init_vector };
+					std::memcpy(reinterpret_cast<void*>(partial.data()), reinterpret_cast<const void*>(aligned_src), static_cast<size_t>(len));
+
+					aes_merge<N>(stream_0123, partial[0]);
+					aes_merge<N>(stream_4567, partial[1]);
+					aes_merge<N>(stream_89AB, partial[2]);
+					aes_merge<N>(stream_CDEF, partial[3]);
+				}
+
+			}
+			else
+			{
+				while (block_count-- > 0)
+				{
+					aes_load<N, false>(stream_0123, src);
+					aes_load<N, false>(stream_4567, src + 64);
+					aes_load<N, false>(stream_89AB, src + 128);
+					aes_load<N, false>(stream_CDEF, src + 192);
+					src += 256;
+				}
+
+				if (len > 0)
+				{
+					std::array<hash_t<N>, 4> partial = { init_vector, init_vector, init_vector, init_vector };
+					std::memcpy(reinterpret_cast<void*>(partial.data()), src, static_cast<size_t>(len));
+
+					aes_merge<N>(stream_0123, partial[0]);
+					aes_merge<N>(stream_4567, partial[1]);
+					aes_merge<N>(stream_89AB, partial[2]);
+					aes_merge<N>(stream_CDEF, partial[3]);
+				}
 			}
 
-			if (len > 0)
-			{
-				std::array<hash_t<N>, 4> partial = { init_vector, init_vector, init_vector, init_vector };
-				std::memcpy(reinterpret_cast<void*>(partial.data()), src, static_cast<size_t>(len));
-
-				aes_merge<N>(stream_0123, partial[0]);
-				aes_merge<N>(stream_4567, partial[1]);
-				aes_merge<N>(stream_89AB, partial[2]);
-				aes_merge<N>(stream_CDEF, partial[3]);
-			}
 
 			hash_t<N> ret = init_vector;
 
@@ -352,54 +486,47 @@ namespace meowh
 		}
 	}
 
-	template <size_t N, size_t R = N>
+	template <size_t N, bool Align = false, size_t R = N>
 	hash_t<R> meow_hash(const void* input, size_t len, uint64_t seed = 0)
 	{
 		static_assert(N == 128 || N == 256 || N == 512, "meow_hash can only be called in 128, 256, or 512 bit mode.");
-		return detail::meow_hash_impl<N, R>(reinterpret_cast<const uint8_t*>(input), len, seed);
+		return detail::meow_hash_impl<N, Align, R>(reinterpret_cast<const uint8_t*>(input), len, seed);
 	}
 
-	template <size_t N, size_t R = N, typename T>
-	hash_t<R> meow_hash(const T* input, size_t len, uint64_t seed = 0)
-	{
-		static_assert(N == 128 || N == 256 || N == 512, "meow_hash can only be called in 128, 256, or 512 bit mode.");
-		return detail::meow_hash_impl<N, R>(reinterpret_cast<const uint8_t*>(input), len * sizeof(T), seed);
-	}
-
-	template <size_t N, size_t R = N, typename T, size_t AN>
+	template <size_t N, bool Align = false, size_t R = N, typename T, size_t AN>
 	hash_t<R> meow_hash(const std::array<T, AN>& input, uint64_t seed = 0)
 	{
 		static_assert(N == 128 || N == 256 || N == 512, "meow_hash can only be called in 128, 256, or 512 bit mode.");
-		return detail::meow_hash_impl<N, R>(reinterpret_cast<const uint8_t*>(input.data()), input.size() * sizeof(T), seed);
+		return detail::meow_hash_impl<N, Align, R>(reinterpret_cast<const uint8_t*>(input.data()), input.size() * sizeof(T), seed);
 	}
 
-	template <size_t N, size_t R = N, typename T>
+	template <size_t N, bool Align = false, size_t R = N, typename T>
 	hash_t<R> meow_hash(const std::basic_string<T>& input, uint64_t seed = 0)
 	{
 		static_assert(N == 128 || N == 256 || N == 512, "meow_hash can only be called in 128, 256, or 512 bit mode.");
-		return detail::meow_hash_impl<N, R>(reinterpret_cast<const uint8_t*>(input.data()), input.length() * sizeof(T), seed);
+		return detail::meow_hash_impl<N, Align, R>(reinterpret_cast<const uint8_t*>(input.data()), input.length() * sizeof(T), seed);
 	}
 
-	template <size_t N, size_t R = N, typename T>
+	template <size_t N, bool Align = false, size_t R = N, typename T>
 	hash_t<R> meow_hash(const std::vector<T>& input, uint64_t seed = 0)
 	{
 		static_assert(N == 128 || N == 256 || N == 512, "meow_hash can only be called in 128, 256, or 512 bit mode.");
-		return detail::meow_hash_impl<N, R>(reinterpret_cast<const uint8_t*>(input.data()), input.size() * sizeof(T), seed);
+		return detail::meow_hash_impl<N, Align, R>(reinterpret_cast<const uint8_t*>(input.data()), input.size() * sizeof(T), seed);
 	}
 
-	template <size_t N, size_t R = N, typename T>
+	template <size_t N, bool Align = false, size_t R = N, typename T>
 	hash_t<R> meow_hash(const std::initializer_list<T>& input, uint64_t seed = 0)
 	{
 		static_assert(N == 128 || N == 256 || N == 512, "meow_hash can only be called in 128, 256, or 512 bit mode.");
-		return detail::meow_hash_impl<N, R>(reinterpret_cast<const uint8_t*>(input.begin()), input.size() * sizeof(T), seed);
+		return detail::meow_hash_impl<N, Align, R>(reinterpret_cast<const uint8_t*>(input.begin()), input.size() * sizeof(T), seed);
 	}
 
-	template <size_t N, size_t R = N, typename ContiguousIterator>
+	template <size_t N, bool Align = false, size_t R = N, typename ContiguousIterator>
 	hash_t<R> meow_hash(ContiguousIterator begin, ContiguousIterator end, uint64_t seed = 0)
 	{
 		static_assert(N == 128 || N == 256 || N == 512, "meow_hash can only be called in 128, 256, or 512 bit mode.");
 		using T = std::decay_t<decltype(*end)>;
-		return detail::meow_hash_impl<N, R>(reinterpret_cast<const uint8_t*>(&*begin), (end - begin) * sizeof(T), seed);
+		return detail::meow_hash_impl<N, Align, R>(reinterpret_cast<const uint8_t*>(&*begin), (end - begin) * sizeof(T), seed);
 	}
 
 

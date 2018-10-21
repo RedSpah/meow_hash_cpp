@@ -86,6 +86,11 @@
 copy "$(ProjectDir)makefile" "$(ProjectDir).."
 copy "$(ProjectDir)meow_hash.hpp" "$(ProjectDir).."</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>copy "$(ProjectDir).travis.yml" "$(ProjectDir).."
+copy "$(ProjectDir)makefile" "$(ProjectDir).."
+copy "$(ProjectDir)meow_hash.hpp" "$(ProjectDir).."</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -102,6 +107,11 @@ copy "$(ProjectDir)meow_hash.hpp" "$(ProjectDir).."</Command>
 copy "$(ProjectDir)makefile" "$(ProjectDir).."
 copy "$(ProjectDir)meow_hash.hpp" "$(ProjectDir).."</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>copy "$(ProjectDir).travis.yml" "$(ProjectDir).."
+copy "$(ProjectDir)makefile" "$(ProjectDir).."
+copy "$(ProjectDir)meow_hash.hpp" "$(ProjectDir).."</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -119,6 +129,11 @@ copy "$(ProjectDir)meow_hash.hpp" "$(ProjectDir).."</Command>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <PreBuildEvent>
+      <Command>copy "$(ProjectDir).travis.yml" "$(ProjectDir).."
+copy "$(ProjectDir)makefile" "$(ProjectDir).."
+copy "$(ProjectDir)meow_hash.hpp" "$(ProjectDir).."</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -139,6 +154,11 @@ copy "$(ProjectDir)meow_hash.hpp" "$(ProjectDir).."</Command>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <PreBuildEvent>
+      <Command>copy "$(ProjectDir).travis.yml" "$(ProjectDir).."
+copy "$(ProjectDir)makefile" "$(ProjectDir).."
+copy "$(ProjectDir)meow_hash.hpp" "$(ProjectDir).."</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="testing.cpp" />
