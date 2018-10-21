@@ -6,8 +6,6 @@
 #include <cmath>
 #include <stdlib.h>
 
-#include <intrin.h>
-
 #ifdef _MSC_VER
 #define _MEOWH_256
 #endif
