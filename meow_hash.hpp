@@ -206,9 +206,9 @@ namespace meowh
 	public:
 
 		static_assert(N == 32 || N == 64 ||
-			(N == 128 && !std::is_same_v<hash_type_t<128>, void>) ||
-			(N == 256 && !std::is_same_v<hash_type_t<256>, void>) ||
-			(N == 512 && !std::is_same_v<hash_type_t<512>, void>),
+			(N == 128 && !std::is_same<hash_type_t<128>, void>::value) ||
+			(N == 256 && !std::is_same<hash_type_t<256>, void>::value) ||
+			(N == 512 && !std::is_same<hash_type_t<512>, void>::value),
 			"meowh::hash_t can only be declared with 32, 64, 128, 256 and 512 element bit width,"
 			"and for the latter three, only if your CPU supports SSE, AVX, and AVX512F respectively.");
 
@@ -258,9 +258,9 @@ namespace meowh
 		hash_type_t<A> as(size_t index) const
 		{
 			static_assert(N == 32 || N == 64 ||
-				(N == 128 && !std::is_same_v<hash_type_t<128>, void>) ||
-				(N == 256 && !std::is_same_v<hash_type_t<256>, void>) ||
-				(N == 512 && !std::is_same_v<hash_type_t<512>, void>),
+				(N == 128 && !std::is_same<hash_type_t<128>, void>::value) ||
+				(N == 256 && !std::is_same<hash_type_t<256>, void>::value) ||
+				(N == 512 && !std::is_same<hash_type_t<512>, void>::value),
 				"meowh::hash_t can only be declared with 32, 64, 128, 256 and 512 element bit width,"
 				"and for the latter three, only if your CPU supports SSE, AVX, and AVX512F respectively.");
 
@@ -344,7 +344,7 @@ namespace meowh
 
 		}
 
-		template <size_t N, bool Align, typename ptr_arg_t = typename std::conditional_t<Align == true, typename const hash_type_t<N>*, const uint8_t*>>
+		template <size_t N, bool Align, typename ptr_arg_t = typename std::conditional<Align == true, typename const hash_type_t<N>*, const uint8_t*>::type>
 		MEOWH_FORCE_STATIC_INLINE void aes_load(hash_t<N>& a, ptr_arg_t src)
 		{
 			if constexpr (Align)
