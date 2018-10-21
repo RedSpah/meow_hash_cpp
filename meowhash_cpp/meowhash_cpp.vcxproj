@@ -79,7 +79,13 @@
       <ConformanceMode>true</ConformanceMode>
       <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
+    <PostBuildEvent>
+      <Command>copy "$(ProjectDir).travis.yml" "$(ProjectDir).."
+copy "$(ProjectDir)makefile" "$(ProjectDir).."
+copy "$(ProjectDir)meow_hash.hpp" "$(ProjectDir).."</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -89,7 +95,13 @@
       <ConformanceMode>true</ConformanceMode>
       <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
+    <PostBuildEvent>
+      <Command>copy "$(ProjectDir).travis.yml" "$(ProjectDir).."
+copy "$(ProjectDir)makefile" "$(ProjectDir).."
+copy "$(ProjectDir)meow_hash.hpp" "$(ProjectDir).."</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -99,6 +111,9 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -113,6 +128,12 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -120,11 +141,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="testing.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="catch.hpp" />
     <ClInclude Include="meow_hash.hpp" />
     <ClInclude Include="meow_hash.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".travis.yml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="makefile" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
