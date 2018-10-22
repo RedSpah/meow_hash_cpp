@@ -269,6 +269,7 @@ int main(int argc, char** argv)
 		ALIGN_FREE(input_buffer);
 	}
 
+	std::cin.get();
 	return res;
 }
 

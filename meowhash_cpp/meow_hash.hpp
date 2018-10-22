@@ -106,19 +106,6 @@ any persistent hash values stored in codebases, databases, etc.
 
 ======================================================================== */
 
-// A force inline macro to match the original's behaviour of having AESMerge and AESLoad as macros.
-#ifdef _MSC_VER    /* Visual Studio */
-#define MEOWH_FORCE_STATIC_INLINE static inline
-#else 
-#ifdef __GNUC__ /* gcc, clang */
-#define MEOWH_FORCE_STATIC_INLINE static inline
-#else
-#define MEOWH_FORCE_STATIC_INLINE static inline
-#endif
-#endif
-
-
-
 // Feature test macros, Visual Studio
 #ifdef _MSC_VER
 
@@ -287,7 +274,7 @@ namespace meowh
 	namespace detail
 	{
 		template <size_t N>
-		MEOWH_FORCE_STATIC_INLINE hash_type_t<N> unaligned_read(const void* src)
+		static inline hash_type_t<N> unaligned_read(const void* src)
 		{
 			hash_type_t<N> val;
 			std::memcpy(reinterpret_cast<void*>(&val), src, sizeof(val));
@@ -295,7 +282,7 @@ namespace meowh
 		}
 
 		template <size_t N>
-		MEOWH_FORCE_STATIC_INLINE void aes_merge(hash_t<N>& a, const hash_t<N>& b)
+		static inline void aes_merge(hash_t<N>& a, const hash_t<N>& b)
 		{
 			if constexpr (N == 128)
 			{
@@ -316,7 +303,7 @@ namespace meowh
 		}
 
 		template <size_t N>
-		MEOWH_FORCE_STATIC_INLINE void aes_rotate(hash_t<N>& a, hash_t<N>& b)
+		static inline void aes_rotate(hash_t<N>& a, hash_t<N>& b)
 		{
 			aes_merge<N>(a, b);
 
@@ -346,7 +333,7 @@ namespace meowh
 		}
 
 		template <size_t N, bool Align, typename ptr_arg_t = typename std::conditional<Align == true, const hash_type_t<N>*, const uint8_t*>::type>
-		MEOWH_FORCE_STATIC_INLINE void aes_load(hash_t<N>& a, ptr_arg_t src)
+		static inline void aes_load(hash_t<N>& a, ptr_arg_t src)
 		{
 			if constexpr (Align)
 			{
