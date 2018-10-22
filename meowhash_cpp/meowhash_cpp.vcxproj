@@ -89,7 +89,8 @@ copy "$(ProjectDir)meow_hash.hpp" "$(ProjectDir).."</Command>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir).travis.yml" "$(ProjectDir).."
 copy "$(ProjectDir)makefile" "$(ProjectDir).."
-copy "$(ProjectDir)meow_hash.hpp" "$(ProjectDir).."</Command>
+copy "$(ProjectDir)meow_hash.hpp" "$(ProjectDir).."
+copy "$(ProjectDir)CMakeLists.txt" "$(ProjectDir).."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -110,7 +111,8 @@ copy "$(ProjectDir)meow_hash.hpp" "$(ProjectDir).."</Command>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir).travis.yml" "$(ProjectDir).."
 copy "$(ProjectDir)makefile" "$(ProjectDir).."
-copy "$(ProjectDir)meow_hash.hpp" "$(ProjectDir).."</Command>
+copy "$(ProjectDir)meow_hash.hpp" "$(ProjectDir).."
+copy "$(ProjectDir)CMakeLists.txt" "$(ProjectDir).."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -132,7 +134,8 @@ copy "$(ProjectDir)meow_hash.hpp" "$(ProjectDir).."</Command>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir).travis.yml" "$(ProjectDir).."
 copy "$(ProjectDir)makefile" "$(ProjectDir).."
-copy "$(ProjectDir)meow_hash.hpp" "$(ProjectDir).."</Command>
+copy "$(ProjectDir)meow_hash.hpp" "$(ProjectDir).."
+copy "$(ProjectDir)CMakeLists.txt" "$(ProjectDir).."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -157,7 +160,8 @@ copy "$(ProjectDir)meow_hash.hpp" "$(ProjectDir).."</Command>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir).travis.yml" "$(ProjectDir).."
 copy "$(ProjectDir)makefile" "$(ProjectDir).."
-copy "$(ProjectDir)meow_hash.hpp" "$(ProjectDir).."</Command>
+copy "$(ProjectDir)meow_hash.hpp" "$(ProjectDir).."
+copy "$(ProjectDir)CMakeLists.txt" "$(ProjectDir).."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -172,6 +176,7 @@ copy "$(ProjectDir)meow_hash.hpp" "$(ProjectDir).."</Command>
     <None Include=".travis.yml" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="CMakeLists.txt" />
     <Text Include="makefile" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
