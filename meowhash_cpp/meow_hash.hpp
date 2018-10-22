@@ -108,10 +108,10 @@ any persistent hash values stored in codebases, databases, etc.
 
 // A force inline macro to match the original's behaviour of having AESMerge and AESLoad as macros.
 #ifdef _MSC_VER    /* Visual Studio */
-#define MEOWH_FORCE_STATIC_INLINE static __forceinline
+#define MEOWH_FORCE_STATIC_INLINE static inline
 #else 
 #ifdef __GNUC__ /* gcc, clang */
-#define MEOWH_FORCE_STATIC_INLINE static inline __attribute__((always_inline))
+#define MEOWH_FORCE_STATIC_INLINE static inline
 #else
 #define MEOWH_FORCE_STATIC_INLINE static inline
 #endif
