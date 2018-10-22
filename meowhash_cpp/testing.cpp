@@ -79,7 +79,7 @@ int main(int argc, char** argv)
 		int32_t test_buf_size = base_buf_size;
 		int32_t test_num = base_num;
 		  
-		for (int adv_step = 0; adv_step < adv_steps; adv_step++)
+		for (int adv_step = 0; adv_step < adv_steps; adv_step++) 
 		{
 			std::minstd_rand rng(std::chrono::system_clock::now().time_since_epoch().count());
 			std::uniform_int_distribution<uint32_t> dist(0, 4294967295U);
