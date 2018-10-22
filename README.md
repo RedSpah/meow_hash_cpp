@@ -17,7 +17,7 @@ Example Usage
 ----
 
 ```cpp
-// standalone hash
+// standalone hash 
 std::array<int, 4> input {322, 2137, 42069, 65536};
 meowh::hash_t<32> hash = meowh::meow_hash<128, 32>(input); 
 
